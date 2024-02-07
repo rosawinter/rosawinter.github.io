@@ -1,0 +1,112 @@
+=============================================================================================================================
+//The following is code used in the proof of Lemma 3.3 of the paper 'Density of rational points on a family of del Pezzo 
+//surfaces of degree one'
+=============================================================================================================================
+k<zeta>:=CyclotomicField(3);
+abc<a,b,x0,y0,z0>:=PolynomialRing(k,5);
+K<a,b,x0,y0,z0>:=FieldOfFractions(abc);
+R<x,y,z>:=PolynomialRing(K,3);
+c:=y0^2-x0^3-a*z0^6-b*z0^3;
+F:=-y^2+x^3+a*z^6+b*z^3+c;
+eta:=[x0,y0,z0]; 
+
+//F=0 defines the affine part (after setting w=1) of a del Pezzo surface S of degree 1 
+//in P(2,3,1,1) with coordinates x,y,z,w, over its function field K. Its generic
+//point is eta. 
+
+//We define the polynomial g such that the intersection of g=0 with F gives the curve C_{eta},
+//and we compute the third point Q of intersection of C_{eta} with the fiber of eta on the elliptic
+//fibration obtained from S.
+
+g:=3*x0^2*z0^2*x*z -2*y0*z0^3*y-(x0^3-2*a*z0^6-b*z0^3)*z^3+(2*c*z0^3+b*z0^6);
+
+coeff:=MonomialCoefficient(g,y);
+y_g:=y-coeff^-1*g;
+F_g:=Evaluate(F,[x,y_g,z]); //Intersection of F=0 and g=0; this gives C_{eta}. 
+
+y_gz0:=Evaluate(y_g,[x,1,z0]);
+F_gz0:=Evaluate(F,[x,y_gz0,z0]); //Intersection of C_{eta} with the fiber of eta.
+
+Rx<x>:=PolynomialRing(K,1);
+
+f:=x^3 + -9/4*x0^4/y0^2*x^2 + (9/2*x0^5 - 3*x0^2*y0^2)/y0^2*x + (-9/4*x0^6 + 2*x0^3*y0^2)/y0^2; //This is F_gz0.
+Factorization(f); //Gives all x-coordinates of the points in the intersection of C_{eta} with the fiber.
+
+xQ:=-(-9/4*x0^4 + 2*x0*y0^2)/y0^2; //This is the x-coordinate of Q.
+
+Evaluate(y_gz0,[xQ,1,1]);
+
+yQ:=(27/8*x0^6 - 9/2*x0^3*y0^2 + y0^4)/y0^3; //The y-coordinate of Q.
+
+//Check that the point Q is on the intersection of S and g=0.
+Evaluate(F,[xQ,yQ,z0]);
+Evaluate(g,[xQ,yQ,z0]);
+
+//We create the elliptic curve E_{eta} given by the normalization of C_{eta} with the point Q. 
+
+A2<X,T>:=AffineSpace(K,2);
+C_eta:=ProjectiveClosure(Curve(Scheme(A2,Evaluate(F_g,[X,1,T]))));
+Q:=C_eta![xQ,z0];
+E_eta,h:=EllipticCurve(C_eta,Q);
+
+//We compute the points Q, sigma(Q), and sigma^2(Q) on E_{eta}, and the sum D_{eta}. 
+
+EQ:=h(Q);
+EzQ:=h(C_eta![xQ*zeta^2,zeta*z0]);
+EzzQ:=h(C_eta![xQ*zeta,zeta^2*z0]);
+D_eta:=EzQ+EzzQ;
+
+//We compute a Weierstrass model WE for E_{eta}, with an isomorphism w:E_{eta}-->WE. 
+WE,w:=WeierstrassModel(E_eta);
+
+//We create a map K --> QQ[a2,b2,c2,x2,z2], to pull back elements in K that are contained in 
+//the subring QQ[a,b,c,x0,z0]. 
+
+T<a1,b1,c1,x1,z1>:=FunctionField(Rationals(),5);
+Ty<y1>:=PolynomialRing(T,1);
+I:=ideal<Ty|y1^2-x1^3-a1*z1^6-b1*z1^3-c1>;
+Quot:=Ty/I;
+phi:=hom<K->Quot | [a1,b1,x1,y1,z1]>;
+R2<a2,b2,c2,x2,z2>:=PolynomialRing(Rationals(),5);
+psi:=hom<T->R2 | [a2,b2,c2,x2,z2]>;
+
+//We check that the only factors of the denominators in the equations defining both w and its inverse 
+//are 2, q2, and q4.
+
+q1:=x2;
+q2:=-x2^6+2*z2^3*(4*a2*z2^3+b2)*x2^3+(4*a2*c2-b2^2)*z2^6;
+q3:=x2^6+8*(a2*z2^6-c2)*x2^3+8*(2*a2^2*z2^12+3*a2*b2*z2^9+(2*a2*c2+b2^2)*z2^6+b2*c2*z2^3); 
+q4:=29*x2^12+(40*c2+24*a2*z2^6)*x2^9+8*(12*a2^2*z2^12+9*a2*b2*z2^9+(18*a2*c2-5*b2^2)*z2^6-5*b2*c2*z2^3-2*c2^2)*x2^6+32*(4*a2^3*z2^18+9*a2^2*b2*z2^15+(5*a2*b2^2+12*a2^2*c2)*z2^12 + 14*a2*b2*c2*z2^9 + (b2^2*c2 + 8*a2*c2^2)*z2^6 + b2*c2^2*z2^3)*x2^3+16*((4*a2^3*c2 - a2^2*b2^2)*z2^18 + (8*a2^2*b2*c2 - 2*a2*b2^3)*z2^15 + (8*a2^2*c2^2 + 2*a2*b2^2*c2 - b2^4)*z2^12 + (8*a2*b2*c2^2- 2*b2^3*c2)*z2^9 + (4*a2*c2^3 -b2^2*c2^2)*z2^6);
+
+w_inv:=Inverse(w);
+for map in [w,w_inv] do
+for a in IsomorphismData(map) do
+Fa:=Factorization(psi(T!phi(Denominator(a))));
+if Fa ne [] then
+i:=Fa[1][2];
+assert(#Factorization(Integers()!((q2*q4)^i/psi(T!phi(Denominator(a))))) eq 1);
+assert(Factorization(Integers()!((q2*q4)^i/psi(T!phi(Denominator(a)))))[1][1] eq 2);
+end if;
+end for;
+end for;
+
+//We verify that the Weierstrass model for E_eta is of the form as claimed.
+
+D:=Coefficients(WE)[5];
+delta:=K!(2^8)^6*Numerator(D)/((2^5*3)^6);
+Bool,isom:=IsIsomorphic(E_eta,EllipticCurve([0,delta]));
+
+Factor:=(3*2^5)/(q2*q4);
+assert(psi(T!phi(Numerator(D)))/psi(T!phi(Denominator(D))) eq psi(T!phi(delta))*Factor^6);
+assert(Degree(psi(T!phi(delta)),x2) eq 81);
+assert(Coefficient(psi(T!phi(delta)),x2,81) eq -27*c2*z2^48);
+
+//We verify that the point D_eta is of the form as claimed.
+
+assert(2^24*psi(T!phi(Denominator(w(D_eta)[1])))/((q2*q4)^2) eq (q1*q3)^2); 
+assert(Degree(2^24*psi(T!phi(Numerator(w(D_eta)[1])))/((2^5*3)^2),x2) eq 42);
+assert(Coefficient(2^24*psi(T!phi(Numerator(w(D_eta)[1])))/((2^5*3)^2),x2,42) eq 1/4*z2^16);
+
+assert(2^36*psi(T!phi(Denominator(w(D_eta)[2])))/((q2*q4)^3) eq (q1*q3)^3);
+assert(Degree(2^36*psi(T!phi(Numerator(w(D_eta)[2])))/((2^5*3)^3),x2) eq 63);
+assert(Coefficient(2^36*psi(T!phi(Numerator(w(D_eta)[2])))/((2^5*3)^3),x2,63) eq 1/8*z2^24);

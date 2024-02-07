@@ -1,0 +1,533 @@
+=================================================================================================================================================
+//The following code is used in Examples 3.1 and 3.3 of the paper 
+//'Torsion points and concurrent exceptional curves on del Pezzo surfaces of degree one', 
+//by Julie Desjardins and Rosa Winter.
+=================================================================================================================================================
+
+//We create the list pts consists of nine points [P1,P2,P3,P4,P5,P6,P7,P8,Q] in the 
+//projective plane PP2 with coordinates [x,y,z].
+
+//For Example 3.1:
+pts:=[[ 0, 1, 1 ],[ 0, 14, 13 ],[ 1, 0, 1 ],[ 21, 0, 13 ],[ 1, 1, 1 ],[ 6, 6, -1 ],[ -2, 2, 1 ],[ -3, 3, -1 ],[0, 0, 1]];
+//For Example 3.3:
+//pts:=[[ 0, 1, 1 ],[ 0, 3861, 1957 ],[ 1, 0, 1 ],[ 1188, 0, -19 ],[ 1, 1, 1 ],[ 780, 780, 1883 ],[ -52, 52, 51 ],[ -9, 9, -17 ],[0, 0, 1]];
+
+
+//We create a set Divisors consisting of primes, such that that the eight points are in general position 
+//in PP2 over any field of characteristic not in Divisors.
+
+R<x,y,z>:=PolynomialRing(Integers(),3);
+
+Determinants:=[];
+
+//no three points on a line
+d:=1;
+mons:=MonomialsOfDegree(R,d);
+for i1 in [1..8] do
+ for i2 in [i1+1..8] do
+  for i3 in [i2+1..8] do
+  zeros:=[[Evaluate(m,pts[i]):m in mons]:i in [i1,i2,i3]];
+  Append(~Determinants, Determinant(Matrix(zeros)));
+  end for;
+ end for;
+end for;
+
+//no six points on a conic
+d:=2;
+mons:=MonomialsOfDegree(R,d);
+for i1 in [1..8] do
+ for i2 in [i1+1..8] do
+  zeros:=[[Evaluate(m,pts[i]):m in mons]:i in [1..8]|i ne i1 and i ne i2];
+  Append(~Determinants, Determinant(Matrix(zeros)));
+ end for;
+end for;
+
+//no eight points on a cubic that is singular in one of them
+d:=3;
+mons:=MonomialsOfDegree(R,d);
+for i in [1..8] do
+ zeros:=[ [ Evaluate(m,X) : m in mons ] : X in pts[1..8]|X ne pts[i]];
+ sing:=[ [ Evaluate(Derivative(m,R.j),pts[i]) : m in mons ] : j in [1,2,3] ];
+ Append(~Determinants, Determinant(Matrix(zeros cat sing)));
+end for;
+
+//The set Divisors for which the points are not in general position.
+Divisors:=Set(&cat[[Factorization(d)[i][1]:i in [1..#Factorization(d)]]:d in Determinants]);
+
+//We check that the point Q is torsion on its fiber on the corresponding elliptic surface.
+
+R<x,y,z>:=PolynomialRing(Rationals(),3);
+PP2:=ProjectiveSpace(R);
+L:=LinearSystem(PP2,3);
+LC:=LinearSystem(L,[PP2!P:P in pts[1..8]]);
+
+for P in BasePoints(LC) do
+if P notin [PP2!X:X in pts] then print P; end if; end for;
+B:=$1; //this is the basepoint of the linear system of cubics through P1,...,P8.
+
+Fiber_Q:=Sections(LinearSystem(L,[PP2!P:P in pts]))[1]; 
+C:=Curve(PP2,Fiber_Q);
+E,h:=EllipticCurve(C,C!B); //the fiber of the point Q=pts[9].
+Order(E!h(pts[9])); //the order of the point Q on its fiber. 
+
+//We check for which characteristics Fiber_Q is not smooth, or h is not defined.
+primes_1:=[F[1]:F in Factorization(Numerator(Discriminant(E)))];
+primes_2:=[F[1]:F in Factorization(Denominator(Discriminant(E)))];
+Defh:=DefiningEquations(h);
+divs:=[];                         
+for d in Defh do
+Append(~divs,Set(&cat[[f[1]:f in Factorization(Denominator(c))]:c in Coefficients(d)]));
+end for;
+Set(primes_1 cat primes_2) join Divisors join divs[1] join divs[2] join divs[3]; //The primes for which this example does not hold.
+
+//We compute the cubics C_{12} and C_{34}.
+R<x,y,z>:=PolynomialRing(Integers(),3);
+d:=3;
+mons:=MonomialsOfDegree(R,d);
+
+//C_{12} goes through P1,P3,P4,P5,P6,P7,P8, with a double point in P1.
+zeros:=[ [ Evaluate(m,X) : m in mons ] : X in [pts[1],pts[3],pts[4],pts[5],pts[6],pts[7],pts[8]] ];
+sing:=[ [ Evaluate(Derivative(m,R.i),pts[1]) : m in mons ] : i in [1,2] ];
+M:=Matrix([[m: m in mons]] cat zeros cat sing);
+Determinant(M);
+
+//C_{34} goes through P1,P2,P3,P5,P6,P7,P8, with a double point in P3.
+zeros:=[ [ Evaluate(m,X) : m in mons ] : X in [pts[1],pts[2],pts[3],pts[5],pts[6],pts[7],pts[8]] ];
+sing:=[ [ Evaluate(Derivative(m,R.i),pts[3]) : m in mons ] : i in [1,2] ];
+M:=Matrix([[m: m in mons]] cat zeros cat sing);
+Determinant(M);
+
+//We compute the quartic Q_{2,6,7} through all points P1...P8 with triple points in P2,P6,P7.
+R<x,y,z>:=PolynomialRing(Integers(),3);
+d:=4;
+mons:=MonomialsOfDegree(R,d);
+zeros:=[[Evaluate(M,P):M in mons]:P in pts| P notin [pts[i]:i in [2,6,7,9]]];
+sing:=&cat[[[Evaluate(Derivative(m,R.i),pts[j]):m in mons]:i in [1,2,3]]:j in [2,6,7]];
+M:=Matrix([[m:m in mons]] cat zeros cat sing);
+Determinant(M);
+
+
+========================================================================================================================================
+//The following code is used in the proof of Lemma 4.2 of the paper 
+//'Torsion points and concurrent exceptional curves on del Pezzo surfaces of degree one', 
+//by Julie Desjardins and Rosa Winter.
+========================================================================================================================================
+
+//We produce a list of the dot product matrices, and for each matrix a basis for the kernel, of the 18 
+//cliques alpha_1,...,alpha_11,beta_1,...,beta_6,gamma, that appear in the proof of Lemma 4.2.  
+
+//We first create a list roots representing all 240 roots in the E8 root system, with numbering 
+//as in the Notation on page 1998 of [R. Winter and R. van Luijk: The action of the Weyl group on the E8 root 
+//system. Graphs and Combinatorics, Vol 37 No 6 (2021), pp. 1965-2064]. 
+
+lst:=
+[
+[   1,   1,   0,   0,   0,   0,   0,   0],
+[   1,  -1,   0,   0,   0,   0,   0,   0],
+[  -1,  -1,   0,   0,   0,   0,   0,   0],
+[ 1/2, 1/2, 1/2, 1/2, 1/2, 1/2, 1/2, 1/2]
+];
+
+Negative:=&cat[[S:S in Subsets({1,2,3,4,5,6,7,8},i)]:i in [2,4,6,8]]; 
+S8:=SymmetricGroup(8);
+exc1:={ [ l[i^g] : i in [1..8]] : g in S8, l in lst[1..3]};
+exc2:=[];
+for N in Negative do;
+e:=lst[4];
+for i in N do
+e[i]:=-e[i];
+end for;
+Append(~exc2,e);
+end for;
+exc2:=Set(exc2);
+roots:=Sort([e:e in exc2] cat [lst[4]]) cat Sort([e: e in exc1]); 
+
+//Next we create a function dotroot, which, given two vectors in roots, produces the dot product of 
+//the corresponding roots in E8.
+
+function dotroot(x,y)
+   return &+[x[i]*y[i] : i in [1..8]];
+end function;
+
+//We define the 18 cliques corresponding to the 18 cliques in Lemma 4.2.
+
+alpha1:=[roots[3],roots[6],roots[41],roots[48],roots[50],roots[55],roots[214],roots[240]];
+alpha1:=[roots[3],roots[6],roots[41],roots[48],roots[50],roots[55],roots[214],roots[227],roots[240]];
+alpha2:=[roots[19],roots[41],roots[48],roots[50],roots[75],roots[146],roots[193],roots[214],roots[240]];
+alpha3:=[roots[12],roots[23],roots[41],roots[50],roots[67],roots[86],roots[163],roots[214],roots[240]];
+alpha4:=[roots[12],roots[23],roots[40],roots[41],roots[50],roots[65],roots[86],roots[214],roots[240]];
+alpha5:=[roots[19],roots[41],roots[48],roots[50],roots[70],roots[75],roots[193],roots[214],roots[240]];
+alpha6:=[roots[12],roots[23],roots[41],roots[50],roots[163],roots[168],roots[214],roots[227],roots[240]];
+alpha7:=[roots[19],roots[41],roots[48],roots[50],roots[65],roots[150],roots[172],roots[214],roots[240]];
+alpha8:=[roots[41],roots[48],roots[50],roots[55],roots[65],roots[78],roots[178],roots[214],roots[240]];
+alpha9:=[roots[3],roots[41],roots[48],roots[50],roots[55],roots[66],roots[152],roots[214],roots[240]];
+alpha10:=[roots[3],roots[41],roots[48],roots[50],roots[55],roots[72],roots[77],roots[214],roots[240]];
+alpha11:=[roots[7],roots[41],roots[48],roots[50],roots[68],roots[78],roots[85],roots[214],roots[240]];
+beta1:=[roots[41],roots[48],roots[50],roots[55],roots[66],roots[152],roots[178],roots[184],roots[214],roots[240]];
+beta2:=[roots[3],roots[6],roots[41],roots[48],roots[50],roots[55],roots[76],roots[77],roots[214],roots[240]];
+beta3:=[roots[12],roots[23],roots[40],roots[41],roots[50],roots[67],roots[77],roots[86],roots[214],roots[240]];
+beta4:=[roots[6],roots[19],roots[41],roots[48],roots[50],roots[65],roots[76],roots[192],roots[214],roots[240]];
+beta5:=[roots[3],roots[6],roots[41],roots[48],roots[50],roots[55],roots[76],roots[85],roots[214],roots[240]];
+beta6:=[roots[19],roots[41],roots[48],roots[50],roots[65],roots[76],roots[86],roots[192],roots[214],roots[240]];
+gamma:=[roots[11],roots[22],roots[36],roots[46],roots[49],roots[69],roots[74],roots[84],roots[184],roots[196],roots[214],roots[240]];
+
+//For each clique, we construct the matrix where entry (i,j) is the dot product of the i-th and j-th 
+//vector in the clique, and a basis for the kernel of this matrix.
+
+for clique in [alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,alpha7,alpha8,alpha9,alpha10,alpha11,beta1,beta2,beta3,beta4,beta5,beta6,gamma] do
+M:=Matrix([ [ dotroot(a,b) : b in clique] : a in clique]);
+print M, Basis(Kernel(ChangeRing(M,Integers())));
+end for;
+
+
+=================================================================================================================================================
+//The following code is used in the proof of Proposition 5.1 of the paper 
+//'Torsion points and concurrent exceptional curves on del Pezzo surfaces of degree one', 
+//by Julie Desjardins and Rosa Winter.
+=================================================================================================================================================
+
+//We first create a list exc representing all 240 exceptional curves in the Picard group of a del Pezzo
+//surface of degree 1, with the notation as in [Yu. I. Manin, Cubic Forms: Algebra, Geometry, Arithmetic.
+//Proposition 26.1].
+
+lst:=
+[
+<0, [ 1,  0,  0,  0,  0,  0,  0,  0]>,
+<1, [-1, -1,  0,  0,  0,  0,  0,  0]>,
+<2, [-1, -1, -1, -1, -1,  0,  0,  0]>,
+<3, [-2, -1, -1, -1, -1, -1, -1,  0]>,
+<4, [-2, -2, -2, -1, -1, -1, -1, -1]>,
+<5, [-2, -2, -2, -2, -2, -2, -1, -1]>,
+<6, [-3, -2, -2, -2, -2, -2, -2, -2]>
+];
+S8:=SymmetricGroup(8);
+exc:={ [l[1]] cat [ l[2][i^g] : i in [1..8]] : g in S8, l in lst};
+exc:=Sort([e: e in exc]);
+
+//Next we create a function root, which, given two vectors in exc, produces the intersection
+//pairing of the corresponding exceptional curves in the picard group.
+
+function dot(x,y)
+   return x[1]*y[1]-&+[x[i]*y[i] : i in [2..9]];
+end function;
+
+//We create the intersection graph on the 240 exceptional curves, where two vertices are
+//connected by an edge if the corresponding curves have positive intersection multiplicity.
+//The automorphism group Wexc of this graph is the Weyl group W(E8). 
+
+M:=Matrix([ [ dot(e1,e2) : e2 in exc] : e1 in exc]);
+for i in [1..240] do
+ M[i,i]:=0;
+  for j in [1..240] do
+   if M[i,j] gt 0 then M[i,j]:=1; end if;
+  end for;
+end for;
+
+Gexc:=Graph<240|M>; Wexc:=AutomorphismGroup(Gexc);
+
+//We fix the two exceptional curves with numbers 9 and 22, corresponding to e1 and e2 in the proof
+//of Proposition 5.1. 
+
+e1:=exc[9]; e2:=exc[22];
+
+//The list T contains all exceptional curves that intersect e1 and e2 with multiplicity 1 or 2.
+//It has size 136.
+
+T:=[e: e in exc|dot(e,e1) in [1,2] and dot(e,e2) in [1,2]];
+
+//We make the subgraph of Gexc with only the exceptional curves in T (and we only care about multpli-
+//cities 1 and 2). 
+
+weights:=[1,2];
+M:=Matrix([ [ dot(a,b) : b in T] : a in T]);
+    for i in [1..#T] do
+      for j in [1..#T] do
+  	if M[i,j] in weights then M[i,j]:=1;
+        else M[i,j]:=0; end if;
+      end for;
+    end for;
+
+G1:=Graph<#T|M>;
+
+//We find all (not necessarily maximal) cliques in G1 of size 6, which correspond to all 
+//cliques of size 8 containing e1 and e2 in Gexc.
+
+A:=AllCliques(G1,6,false); //There are 8963624 cliques.
+
+//The following first sorts all cliques in A according to the size of their stabilizer
+//under the action of Wexc, and within each set of cliques of the same stabilizer size
+//we sort them up to conjugacy, so that we have only one representative of each orbit of
+//the action of Wexc on A. This is a long computation.
+
+L:=[];
+for i in [1..#A] do
+ K:=Set([Index(exc,T[Index(b)]):b in A[i]] cat [9,22]); //this is the clique in Gexc after adding e1 and e2 to the clique in A.
+ L[i]:=#Stabilizer(Wexc,K);
+end for;
+S:=Set(L); 		//S is now a set of all different stabilizer sizes of all cliques in A.
+S:=[s:s in S];
+
+P:=[];                  //a list of sets of cliques ordered by the size of their stabilizer. 
+for i in [1..#S] do
+P[i]:=[A[j]:j in [1..#L]|L[j] eq S[i]];
+end for;
+
+//Now we take one representative of each orbit of each set of cliques with the same stabilizer size
+//(we ordered first by stabilizer size since this gives smaller sets to sort into orbits). 
+//This computation took more than 2 weeks.
+
+for i in [1..#P] do
+Cliques:=[];
+repeat
+K:=Set([Index(exc,T[Index(b)]):b in P[i][1]] cat [9,22]); 
+Append(~Cliques,K);
+for a in P[i] do
+if IsConjugate(Wexc,Set([Index(exc,T[Index(b)]):b in a] cat [9,22]),K) then Exclude(~P[i],a); end if;
+end for;
+until #P[i] eq 0;
+Cliques;
+end for;
+
+//The following is the output of the last computation. Numbers correspond to the numbers in the list exc.
+
+[ 
+    { 9, 22, 31, 36, 99, 171, 177, 193 },
+    { 9, 22, 31, 36, 99, 171, 177, 238 },
+    { 9, 22, 31, 36, 156, 162, 181, 229 }
+] 
+[ 
+    { 9, 22, 31, 36, 99, 110, 175, 182 },
+    { 9, 22, 31, 36, 99, 171, 177, 192 },
+    { 9, 22, 31, 36, 99, 171, 177, 214 },
+    { 9, 22, 31, 36, 99, 171, 192, 217 },
+    { 9, 22, 31, 36, 156, 162, 168, 226 },
+    { 9, 22, 31, 36, 156, 177, 214, 225 }
+] 
+[ 
+    { 9, 22, 31, 36, 99, 171, 214, 231 },
+    { 9, 22, 31, 36, 156, 162, 181, 199 }
+] 
+[ 
+    { 9, 22, 31, 36, 99, 171, 177, 183 },
+    { 9, 22, 31, 36, 156, 162, 174, 182 },
+    { 9, 22, 31, 36, 156, 162, 174, 231 }
+] 
+[ 
+    { 9, 22, 31, 36, 99, 110, 175, 218 },
+    { 9, 22, 31, 36, 99, 110, 180, 197 },
+    { 9, 22, 31, 36, 99, 171, 192, 218 },
+    { 9, 22, 31, 36, 99, 171, 198, 240 },
+    { 9, 22, 31, 36, 156, 177, 225, 230 }
+] 
+[ 
+    { 9, 22, 31, 36, 156, 162, 181, 214 },
+    { 9, 22, 31, 36, 156, 177, 209, 225 }
+] 
+[ 
+    { 9, 22, 31, 36, 99, 110, 175, 239 },
+    { 9, 22, 31, 36, 99, 171, 177, 209 },
+    { 9, 22, 31, 36, 99, 171, 192, 197 },
+    { 9, 22, 31, 36, 156, 162, 168, 174 },
+    { 9, 22, 31, 36, 156, 176, 214, 225 }
+] 
+[ 
+    { 9, 22, 31, 36, 156, 177, 214, 216 }
+]
+[ 
+    { 9, 22, 31, 36, 99, 110, 180, 199 },
+    { 9, 22, 31, 36, 99, 110, 180, 236 },
+    { 9, 22, 31, 36, 99, 171, 176, 192 },
+    { 9, 22, 31, 36, 99, 171, 176, 214 },
+    { 9, 22, 31, 36, 99, 171, 176, 239 },
+    { 9, 22, 31, 36, 206, 212, 223, 231 }
+] 
+[ 
+    { 9, 22, 31, 36, 99, 110, 117, 177 },
+    { 9, 22, 31, 36, 156, 214, 225, 228 }
+]
+[ 
+    { 9, 22, 31, 120, 123, 168, 229, 237 }
+]
+[ 
+    { 9, 22, 31, 36, 99, 110, 117, 176 },
+    { 9, 22, 31, 36, 156, 162, 168, 192 },
+    { 9, 22, 31, 36, 156, 176, 214, 217 }
+]
+[ 
+    { 9, 22, 31, 122, 130, 198, 209, 237 }
+]
+[ 
+    { 9, 22, 31, 36, 99, 110, 180, 183 }
+]
+[ 
+    { 9, 22, 31, 36, 156, 162, 174, 176 }
+]
+[ 
+    { 9, 22, 31, 36, 206, 209, 224, 231 }
+]
+[ 
+    { 9, 22, 31, 36, 99, 190, 199, 234 }
+] 
+[
+    { 9, 22, 31, 122, 130, 192, 197, 209 }
+] 
+[ 
+    { 9, 22, 31, 120, 123, 204, 209, 237 }
+]
+[ 
+    { 9, 22, 31, 36, 99, 110, 117, 120 }
+]
+
+
+
+=================================================================================================================================================
+//The following code is used in the proof of Proposition 5.4 of the paper 
+//'Torsion points and concurrent exceptional curves on del Pezzo surfaces of degree one', 
+//by Julie Desjardins and Rosa Winter.
+=================================================================================================================================================
+k:=Rationals();
+R6<a,b,c,d,e,m>:=PolynomialRing(k,6);
+
+P1:=[0,1,1];
+P2:=[0,1,a];
+P3:=[1,0,1];
+P4:=[1,0,b];
+P5:=[1,1,1];
+P6:=[1,1,c];
+P7:=[m,1,d];
+P8:=[m,1,e];
+X:=[0,0,1];
+pts:=[P1,P2,P3,P4,P5,P6,P7,P8];
+
+
+A:=PolynomialRing(Integers(),3);
+
+//S_0 is the set of equations that say that the points are not in general position
+facts:=[];
+
+deg:=1;
+mons:=MonomialsOfDegree(A,deg);
+for i1 in [1..8] do
+for i2 in [i1+1..8] do
+for i3 in [i2+1..8] do
+zeros:=[[Evaluate(M,pts[i]):M in mons]:i in [i1,i2,i3]];
+N:=Factorization(Determinant(Matrix(zeros)));
+Append(~facts,[f[1]:f in N]);
+end for;
+end for;
+end for;
+
+deg:=2;
+mons:=MonomialsOfDegree(A,deg);
+for i1 in [1..8] do
+for i2 in [i1+1..8] do
+zeros:=[[Evaluate(M,pts[i]):M in mons]:i in [1..8]|i ne i1 and i ne i2];
+N:=Factorization(Determinant(Matrix(zeros)));
+Append(~facts,[f[1]:f in N]);
+end for;
+end for;
+
+deg:=3;
+mons:=MonomialsOfDegree(A,deg);
+for i in [1..8] do
+zeros:=[ [ Evaluate(M,P) : M in mons ] : P in pts[1..8]|P ne pts[i]]; 
+sing:=[ [ Evaluate(Derivative(M,A.j),pts[i]) : M in mons ] : j in [1,2,3] ];
+N:=Factorization(Determinant(Matrix(zeros cat sing)));
+Append(~facts,[f[1]:f in N]);
+end for;
+
+S_0:=Set(&cat(facts));
+
+//First we create the relation that says that the cubic passing through
+//all points except P2, and twice through P1, contains X.
+
+mons:=MonomialsOfDegree(A,3); 
+zeros:=[[Evaluate(M,P):M in mons]:P in pts cat [X]|P ne pts[2]];      
+sing:=[[Evaluate(Derivative(M,A.i),pts[1]):M in mons]:i in [1,2]];
+N:=Matrix(zeros cat sing);
+C:=Factorization(Determinant(N));
+
+for c in C do
+c[1] in S_0; 
+end for;
+
+//We find b=-( -c*d*e + c*d + c*e - c + 2*d*e - 2*d - 2*e + 2)/(c*m^2 + d*e - d*m - d - e*m - e - m^2 + 2*m + 1). 
+//Note that if the denominator (call it g1) would be 0, then, since g1*b-numerator=0 this implies that -numerator 
+//(call it g2) is 0 as well. We check that this implies that the points are not in general position by 
+//showing that (c-1)*g1+g2 is a product of elements in S_0.
+
+F:=Factorization((c-1)*(c*m^2 + d*e - d*m - d - e*m - e - m^2 + 2*m + 1)+(-c*d*e + c*d + c*e - c + 2*d*e - 2*d - 2*e + 2));
+F[1][1] in S_0;
+F[2][1] in S_0;
+
+//We substitute b for b=-g2/g1.
+
+R5<a1,c1,d1,e1,m1>:=PolynomialRing(k,5);
+K5:=FieldOfFractions(R5);
+PP5:=ProjectiveSpace(R5);
+b1:=-( -c1*d1*e1 + c1*d1 + c1*e1 - c1 + 2*d1*e1 - 2*d1 - 2*e1 + 2)/(c1*m1^2 + d1*e1 - d1*m1 - d1 - e1*m1- e1 - m1^2 + 2*m1 + 1);
+phi_6_5:=hom<R6->K5|[a1,b1,c1,d1,e1,m1]>;
+function psi_6_5(p);
+    prep:=[e@phi_6_5:e in p];
+    den:=LCM([Denominator(e):e in prep]);
+    return [R5!(e*den):e in prep];
+end function;
+pts_1:=[psi_6_5(p):p in pts];
+
+S_1:=Set(&cat[[f[1]:f in Factorization(psi_6_5([elt])[1])]:elt in S_0]);
+
+
+//We do the exact same for the cubic passing through
+//all points except P4, and twice through P3, containing X.
+
+mons:=MonomialsOfDegree(A,3); 
+zeros:=[[Evaluate(M,P):M in mons]:P in pts_1 cat [X]|P ne pts_1[4]];      
+sing:=[[Evaluate(Derivative(M,A.i),pts_1[3]):M in mons]:i in [1,2]];
+N:=Matrix(zeros cat sing);
+C:=Factorization(Determinant(N));
+
+for c in C do
+c[1] in S_1; 
+end for;
+
+//We find a=-(-c1*d1*e1 + c1*d1*m1 + c1*e1*m1 - c1*m1^2 + 2*d1*e1 - 2*d1*m1 - 2*e1*m1 + 2*m1^2)/(c1 + d1*e1 - d1*m1 - d1 - e1*m1 - e1 + m1^2 + 2*m1 - 1);
+//Again, note that if the denominator (call it h1) would be 0, then since h1*a-numerator equals 0, it implies that -numerator 
+//(call it h2) is 0 as well. We check that this implies that the points are not in general position. 
+
+F:=Factorization((c1-1)*(c1 + d1*e1 - d1*m1 - d1 - e1*m1 - e1 + m1^2 + 2*m1 - 1)+(-c1*d1*e1 + c1*d1*m1 + c1*e1*m1 - c1*m1^2 + 2*d1*e1 - 2*d1*m1 - 2*e1*m1 + 2*m1^2));
+F[1][1] in S_1;
+F[2][1] in S_1;
+
+//We substitute a for a=-h2/h1.
+
+R4<c2,d2,e2,m2>:=PolynomialRing(k,4);
+K4:=FieldOfFractions(R4);
+PP4:=ProjectiveSpace(R4);
+a2:=-(-c2*d2*e2 + c2*d2*m2 + c2*e2*m2 - c2*m2^2 + 2*d2*e2 - 2*d2*m2 - 2*e2*m2 + 2*m2^2)/(c2 + d2*e2 - d2*m2 - d2 - e2*m2 - e2 + m2^2 + 2*m2 - 1);
+phi_5_4:=hom<R5->K4|[a2,c2,d2,e2,m2]>;
+function psi_5_4(p);
+    prep:=[e@phi_5_4:e in p];
+    den:=LCM([Denominator(e):e in prep]);
+    return [R4!(e*den):e in prep];
+end function;
+pts_2:=[psi_5_4(p):p in pts_1];
+
+S_2:=Set(&cat[[f[1]:f in Factorization(psi_5_4([elt])[1])]:elt in S_1]);
+
+
+//Finally, we do the exact same for the cubic passing through
+//all points except P6, and twice through P5, containing X.
+
+mons:=MonomialsOfDegree(A,3); 
+zeros:=[[Evaluate(M,P):M in mons]:P in pts_2 cat [X]|P ne pts_2[6]];      
+sing:=[[Evaluate(Derivative(M,A.i),pts_2[5]):M in mons]:i in [1,2]];
+N:=Matrix(zeros cat sing);
+C:=Factorization(Determinant(N));
+
+for c in C do
+c[1] in S_0; 
+end for;
+
+//We find c2 + d2*e2 - d2*m2 - d2 - e2*m2 - e2 + m2^2 + 2*m2 - 1 = 0. 
+
+

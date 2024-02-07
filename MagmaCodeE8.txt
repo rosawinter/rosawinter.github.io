@@ -1,0 +1,275 @@
+==================================================================================
+// Defining the roots in E, the graph Gamma, and its automorphism group W.
+==================================================================================
+function dotroot(x,y)
+   return &+[x[i]*y[i] : i in [1..8]];
+end function;
+lst:=
+[
+[   1,   1,   0,   0,   0,   0,   0,   0],
+[   1,  -1,   0,   0,   0,   0,   0,   0],
+[  -1,  -1,   0,   0,   0,   0,   0,   0],
+[ 1/2, 1/2, 1/2, 1/2, 1/2, 1/2, 1/2, 1/2]
+];
+
+Negative:=&cat[[S:S in Subsets({1,2,3,4,5,6,7,8},i)]:i in [2,4,6,8]]; 
+S8:=SymmetricGroup(8);
+exc1:={ [ l[i^g] : i in [1..8]] : g in S8, l in lst[1..3]};
+exc2:=[];
+for N in Negative do;
+e:=lst[4];
+for i in N do
+e[i]:=-e[i];
+end for;
+Append(~exc2,e);
+end for;
+exc2:=Set(exc2);
+roots:=Sort([e:e in exc2] cat [lst[4]]) cat Sort([e: e in exc1]); 
+
+M:=Matrix([ [ dotroot(e1,e2) : e2 in roots] : e1 in roots]);
+for i in [1..240] do
+  for j in [1..240] do
+   if M[i,j] in [1,2] then M[i,j]:=0; else M[i,j]:=1; end if;
+  end for;
+end for;
+
+G:=Graph<240|M>; W:=AutomorphismGroup(G);
+
+==================================================================================
+// Given a list or set fixedroots of roots in E, and a list of colors c, retrun 
+// the graph where the vertices are those in fixedroots, and two vertices are
+// connected if the corresponding roots have inner product in c.
+==================================================================================
+function GraphOfRoots(fixedroots, c)
+   N:=Matrix([ [ dotroot(e1,e2) : e2 in fixedroots] : e1 in fixedroots]);
+   for i in [1..#fixedroots] do
+    for j in [1..#fixedroots] do
+     if N[i,j] in c then N[i,j]:=1; else N[i,j]:=0; end if;
+    end for;
+   end for;
+   return Graph<#fixedroots|N>;  
+end function;   
+
+==================================================================================
+// Given a list or set fixedroots of roots in E, and a list of colors c, returns 
+// for all i the number of maximal cliques of size i in Gamma_c that contain the  
+// the roots in fixedroots.
+==================================================================================
+function NumberOfCliquesOnlyColorC(fixedroots,c)
+   R:=[e:e in roots|Set([dotroot(e,ei) : ei in fixedroots]) subset Set(c)];
+   F:=GraphOfRoots(R,c);
+   CliqueNumber(F); 
+   for i in [1..CliqueNumber(F)] do
+      return i, #AllCliques(F,i);      
+   end for;
+end function;
+
+==================================================================================
+// Given a list or set K of roots in E, and a list of colors c, checks that the 
+// roots in K form a clique in Gamma_c, and that this clique is maximal in Gamma_c.
+==================================================================================
+function IsMaximalClique(K,c)
+   assert({dotroot(roots[a],roots[b]):a in K, b in K} subset c join {2});    
+   assert(#[r:r in roots|{dotroot(r,roots[a]):a in K} subset c] eq 0);   
+end function;
+
+==================================================================================
+// Given a list or set K of roots in E, and a list of at most three colors c,   
+// returns the automorphism group of the colored graph with vertices in K.
+==================================================================================
+function AutClique(K,c)
+   F1:=GraphOfRoots(K,[c[1]]);
+   A1:=AutomorphismGroup(F1); 
+   if #c eq 3 then
+      F2:=GraphOfRoots(K,[c[2]]);
+      A2:=AutomorphismGroup(F2); 
+      return A1 meet A2;
+   else return A1;
+   end if;
+end function;
+
+==================================================================================
+// Given a list or set K of roots in E, and a list of colors c, returns the number   
+// of unordered pairs of elements in K that have inner product in c. 
+==================================================================================
+function NumberOfPairs(K,c)
+   #[<a,b>: a in K,b in K|dotroot(roots[a],roots[b]) in c]/2;
+end function;
+
+==================================================================================
+// Given a list of colors c, return for all i the size each orbit of the set of 
+// maximal cliques of size i in Gamma_c, as well as a representative for each 
+// orbit. 
+==================================================================================
+function FindOrbits(c) 
+   F:=GraphOfRoots(roots,c);
+   print "CliqueNumber: ", CliqueNumber(F);
+   for i in [1..CliqueNumber(F)] do
+      A:=AllCliques(F,i);
+      if #A ne 0 then
+        O:=Orbits(W,GSet(W,{Set([Index(b):b in a]):a in A}));
+        print i,[#r: r in O],[r[1] : r in O];
+      end if;
+   end for;
+end function;
+
+==================================================================================
+// Given a list or set A of cliques in Gamma, and index list R of A, return a list 
+// of one representative of each orbit of A under the action of W. This is done by
+// first splitting up the elements in A according to their stabilizer size. 
+==================================================================================
+function FindOrbitsStabilizerSize(A,R)
+   L:=[];                  
+   for i in [1..#A] do
+      K:=Set([Index(roots,R[Index(b)]):b in A[i]]);
+      L[i]:=#Stabilizer(W,K);
+   end for;
+   S:=Set(L);
+   S:=[s:s in S];
+   P:=[];  
+   for i in [1..#S] do
+      P[i]:=[A[j]:j in [1..#L]|L[j] eq S[i]];
+   end for;
+   Cliques:=[]; 
+   for i in [1..#P] do
+      repeat
+      K:=Set([Index(roots,R[Index(b)]):b in P[i][1]]); 
+      Append(~Cliques,K);
+      for a in P[i] do
+         if IsConjugate(W,Set([Index(roots,R[Index(b)]):b in a]),K) then Exclude(~P[i],a); 
+         end if;
+      end for;
+      until #P[i] eq 0;
+   end for;
+   return Cliques;
+end function;
+
+==================================================================================
+// Given a list T where the elements are indices of elements in roots, and a list 
+// c of at most three colors, construct a map g from the stabilizer in W of the 
+// set of roots corresponding to the indices in T, to the automorphism group of 
+// the colored subgraph of Gamma whose vertices are the roots corresponding to the 
+// indices in T, and where an edge has a color in c if the corresponding roots 
+// have that color as dot product. The map g is the restriction of an element in 
+// the stabilizer to the set of roots in the subgraph.
+==================================================================================
+function MapStabAut(T,c)
+   Stab:=Stabilizer(W,Set(T));
+   Gen:=[g:g in Generators(Stab)];
+   Aut:=AutClique([roots[t]:t in T],c);
+   g:=hom<Stab->Aut|[<Gen[j],Aut![Index(T,i^Gen[j]):i in T]>:j in [1..#Gen]]>;
+   return g;
+end function;
+
+==================================================================================
+// Given a list T where the elements are indices of elements in roots, and a list 
+// c1 of at most three colors. the function CokernelClassesType* constructs the 
+// set Tr of a representative for each class of the cokernel of the map g 
+// constructed in MapStabAut(T,c1), and a list Classes. For each i, Classes[i] is 
+// an element in Tr, that maps a sequence k whose graph is of type *, with * in A, 
+// Cminus1 (corresponding to Type C_{-1}), C1, D, or F, to a non-conjugate sequence.
+==================================================================================
+
+function CokernelClassesTypeA(T,c1)
+   Aut:=AutClique([roots[t]:t in T],c1);
+   g:=MapStabAut(T,c1);
+   Tr:=Transversal(Aut,Image(g));
+   F:=GraphOfRoots([roots[t]:t in T], [0]);
+   K:=AllCliques(F,4,false);
+   Classes:=[];
+   for tr in Tr do
+     for k in K do  
+       if IsConjugate(W,[T[Index(a)^tr]:a in k],[T[Index(a)]:a in k]) eq false then Append(~Classes,tr); 
+       end if;
+     end for;
+   end for;
+   return #Tr, #Set(Classes);
+end function;
+
+function CokernelClassesTypeCminus1(T,c1)
+   Sums:=[2*Vector(e)+Vector(f):e,f in roots];
+   Aut:=AutClique([roots[T[i]]:i in [1..#T]],c1);
+   g:=MapStabAut(T,c1);
+   Tr:=Transversal(Aut,Image(g));
+   S5:=SymmetricGroup(5);
+   K:=[[s: s in S]: S in Subsets(Set(T),5)]; 
+   K:=&cat[[[K[i][v^g]:v in [1..5]]:g in S5]:i in [1..#K]];
+   Type:=[k:k in K| [[dotroot(roots[k[a]],roots[k[b]]):a in [1..5]]:b in [1..5]] eq [[2,0,0,-1,0],[0,2,0,0,-1],[0,0,2,0,0],[-1,0,0,2,0],[0,-1,0,0,2]]];
+   Classes:=[];
+   for tr in Tr do
+     for k in Type do  
+       if IsConjugate(W,[T[Index(T,k[i])^tr]:i in [1..5]],k) eq false then Append(~Classes,tr); 
+         sum1:=Vector(&+[Vector(roots[k[i]]):i in [1,2,3]])-Vector(&+[Vector(roots[k[i]]):i in [4,5]]);
+         sum2:=Vector(&+[Vector(roots[T[Index(T,k[i])^tr]]):i in [1,2,3]])-Vector(&+[Vector(roots[T[Index(T,k[i])^tr]]):i in [4,5]]);
+         assert (sum1 in Sums and sum2 notin Sums) or (sum1 notin Sums and sum2 in Sums);
+       end if; 
+     end for;
+   end for;
+   return #Tr, #Set(Classes);
+end function;
+
+function CokernelClassesTypeC1(T,c1)
+   Sums:=[2*Vector(e)+Vector(f):e,f in roots];
+   Aut:=AutClique([roots[T[i]]:i in [1..#T]],c1);
+   g:=MapStabAut(T,c1);
+   Tr:=Transversal(Aut,Image(g));
+   F:=GraphOfRoots([roots[T[i]]:i in [1..#T]], [1,0]);
+   K:=AllCliques(F,5,false);
+   Type:=[k:k in K|#[e:e in k|#[f:f in k|dotroot(roots[T[Index(e)]],roots[T[Index(f)]]) eq 1] eq 1] eq 4 and #[e:e in k|#[f:f in k|dotroot(roots[T[Index(e)]],roots[T[Index(f)]]) eq 0] eq 4] eq 1];
+   Classes:=[];
+   for tr in Tr do
+     for k in Type do  
+       if IsConjugate(W,[T[Index(a)^tr]:a in k],[T[Index(a)]:a in k]) eq false then Append(~Classes,tr); 
+         sum1:=Vector(&+[Vector(roots[T[Index(a)]]):a in k]);
+         sum2:=Vector(&+[Vector(roots[T[Index(a)^tr]]):a in k]);
+         assert((sum1 in Sums and sum2 notin Sums) or (sum1 notin Sums and sum2 in Sums));
+       end if; 
+     end for;
+   end for;
+   return #Tr, #Set(Classes);
+end function;
+
+function CokernelClassesTypeD(T,c1)
+   Sums:=[2*Vector(e)+2*Vector(f):e,f in roots];
+   Aut:=AutClique([roots[T[i]]:i in [1..#T]],c1);
+   g:=MapStabAut(T,c1);
+   Tr:=Transversal(Aut,Image(g));
+   F:=GraphOfRoots([roots[T[i]]:i in [1..#T]], [1,0]);
+   K:=AllCliques(F,5,false);
+   Type:=[k:k in K|#[e:e in k|#[f:f in k|dotroot(roots[T[Index(e)]],roots[T[Index(f)]]) eq 1] eq 2] eq 3 and #[e:e in k|#[f:f in k|dotroot(roots[T[Index(e)]],roots[T[Index(f)]]) eq 0] eq 4] eq 2];
+   Classes:=[];
+   for tr in Tr do
+     for k in Type do  
+       if IsConjugate(W,[T[Index(a)^tr]:a in k],[T[Index(a)]:a in k]) eq false then Append(~Classes,tr); 
+         sum1:=Vector(&+[Vector(roots[T[Index(a)]]):a in k]);
+         sum2:=Vector(&+[Vector(roots[T[Index(a)^tr]]):a in k]);
+         assert((sum1 in Sums and sum2 notin Sums) or (sum1 notin Sums and sum2 in Sums));
+       end if; 
+     end for;
+   end for;
+   return #Tr, #Set(Classes);
+end function;
+
+function CokernelClassesTypeF(T,c1)
+   Sums:=[2*Vector(e)+2*Vector(f):e,f in roots];
+   Aut:=AutClique([roots[T[i]]:i in [1..#T]],c1);
+   g:=MapStabAut(T,c1);
+   Tr:=Transversal(Aut,Image(g));
+   F:=GraphOfRoots([roots[T[i]]:i in [1..#T]], [1,0]);
+   K:=AllCliques(F,6,false);
+   Type:=[k:k in K|#[e:e in k|#[f:f in k|dotroot(roots[T[Index(e)]],roots[T[Index(f)]]) eq 1] eq 4] eq 5 and #[e:e in k|#[f:f in k|dotroot(roots[T[Index(e)]],roots[T[Index(f)]]) eq 0] eq 5] eq 1];
+   Classes:=[];
+   Sums1:=[];
+   Sums2:=[];
+   for tr in Tr do
+     for k in Type do  
+       if IsConjugate(W,Set([T[Index(a)^tr]:a in k]),Set([T[Index(a)]:a in k])) eq false then Append(~Classes,tr); 
+          sum1:=Vector(&+[Vector(roots[T[Index(a)]]):a in k]);         
+          sum2:=Vector(&+[Vector(roots[T[Index(a)^tr]]):a in k]);            
+       end if; 
+     end for;
+   end for;
+   return sum1,sum2,#Tr, #Set(Classes);
+end function;
+
+

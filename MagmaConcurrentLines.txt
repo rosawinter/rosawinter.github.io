@@ -1,0 +1,540 @@
+//This code is used for the proof of Proposition 4.6 in the paper 
+//´Concurrent lines on del Pezzo surfaces of degree one´, which is 
+//Proposition 4.4.6 in my PhD thesis.
+ 
+//We start with the computation over the integers; below this is the computation 
+//over the finite field of two elements.
+
+============================= Over the integers ======================
+
+k:=Integers();
+
+T5<l,m,s,t,u>:=PolynomialRing(k,5);
+
+R1:=[1,0,1];
+R2:=[0,0,0];
+R3:=[-s^2+1,2*l-2*s,2*l*s-s^2-1];
+R4:=[-s^2+1,2*m-2*s,2*m*s-s^2-1];
+R5:=[0,1,1];
+R6:=[0,­-1,1];
+R7:=[-t^2+1,2*l-2*t,2*l*t-t^2-1];
+R8:=[-u^2+1,2*m-2*u,2*m*u-u^2-1];
+P:=[-­1,0,1];
+
+pts:=[R1,R2,R3,R4,R5,R6,R7,R8,P];
+
+A<x,y,z>:=PolynomialRing(T5,3);
+
+//Compute the unique conic containing R3,R5,R7,R8,P
+
+d:=2;
+mons:=MonomialsOfDegree(A,d);
+zeros:=[[Evaluate(M,pts[i]):M in mons]:i in [3,5,7,8,9]];
+N:=Matrix([[m:m in mons]] cat zeros);
+factN:=Factorization(Determinant(N));
+for i in [x^2,x*y,x*z,y^2,y*z,z^2] do
+  Factorization(MonomialCoefficient(factN[9][1],i));
+end for;
+
+//Intersecting the conic with the line L1 : y=0
+//This gives an equation for the point R2.
+
+r2:=Factorization(Evaluate(factN[9][1],[x,0,z]));
+
+for i in [x,z] do
+   Factorization(MonomialCoefficient(r2[2][1],i));
+end for;
+
+R2:=[-(l*s*u + l*s + l*t*u + l*t - l*u^2 + l - m*s*t - m*s - m*t - m - s*t + s*u + t*u - u^2),0,(2*l^2*u + 2*l^2 - 2*l*m*u - 2*l*m - l*s*u - l*s - l*t*u - l*t + l*u^2 + 2*l*u + l + m*s*t + m*s + m*t - 2*m*u - m + s*t - s*u - t*u + u^2)];
+
+pts:=[R1,R2,R3,R4,R5,R6,R7,R8,P];
+
+//We compute the defining polynomials of the set S0, corresponding to the points 
+//R1,...R8 not being in general position.
+
+facts:=[];
+
+d:=1;
+mons:=MonomialsOfDegree(A,d);
+for i1 in [1..8] do
+  for i2 in [i1+1..8] do
+    for i3 in [i2+1..8] do
+    zeros:=[[Evaluate(M,pts[i]):M in mons]:i in [i1,i2,i3]];
+    N:=Factorization(Determinant(Matrix(zeros)));
+    Append(~facts,[f[1]:f in N]);
+    end for;
+  end for;
+end for;
+
+d:=2;
+mons:=MonomialsOfDegree(A,d);
+for i1 in [1..8] do
+  for i2 in [i1+1..8] do
+      zeros:=[[Evaluate(M,pts[i]):M in mons]:i in [1..8]|i ne i1 and i ne i2];
+      N:=Factorization(Determinant(Matrix(zeros)));
+      Append(~facts,[f[1]:f in N]);
+  end for;
+end for;
+
+d:=3;
+mons:=MonomialsOfDegree(A,d);
+for i in [1..8] do
+zeros:=[ [ Evaluate(M,X) : M in mons ] : X in pts[1..8]|X ne pts[i]];
+sing:=[ [ Evaluate(Derivative(M,A.j),pts[i]) : M in mons ] : j in [1,2,3] ];
+N:=Factorization(Determinant(Matrix(zeros cat sing)));
+Append(~facts,[f[1]:f in N]);
+end for;
+
+S0:=Set(&cat(facts));
+
+//We compute the defining equation for C4 and show that all but the last
+//factors define configurations where R1,...R8 are collinear.
+
+d:=2;
+mons:=MonomialsOfDegree(A,d);
+zeros:=[ [ Evaluate(M,pts[i]) : M in mons ] : i in [2,4,6,7,8,9] ];
+N:=Matrix(zeros);
+factN:=Factorization(Determinant(N));
+
+collinear:=[];
+d:=1;
+mons:=MonomialsOfDegree(A,d);
+for i1 in [1..8] do
+  for i2 in [i1+1..8] do
+    for i3 in [i2+1..8] do
+    zeros:=[[Evaluate(M,pts[i]):M in mons]:i in [i1,i2,i3]];
+    N:=Factorization(Determinant(Matrix(zeros)));
+    Append(~collinear,[f[1]:f in N]);
+    end for;
+  end for;
+end for;
+collinear:=&cat(collinear);
+
+for i in [1..#factN-1] do
+  assert(factN[i][1] in collinear);
+end for;
+
+//More specifically, factN[10][1] corresponds to R2,R3,R4 being collinear.
+
+zeros:=[[Evaluate(M,pts[i]):M in mons]:i in [2,3,4]];
+N:=Factorization(Determinant(Matrix(zeros)));
+factN[10][1] eq N[5][1];
+
+//The last factor of factN determines the variety F2. 
+
+f2:=l^2*s*u^2 - l^2*s - l^2*u^2 + l^2 - 2*l*m*s*t*u - 2*l*m*s*t + 2*l*m*s*u + 2*l*m*s + 2*l*s*t*u + 2*l*s*t - 2*l*s*u - 2*l*s + m^2*s*t^2 - m^2*s + m^2*t^2 - m^2 - 2*m*s*t*u - 2*m*s*t + 2*m*s*u + 2*m*s - s*t^2 + 2*s*t*u + 2*s*t - s*u^2 - 2*s*u - t^2 + u^2;
+
+for i in [x^2,x*y,y^2,x,y,1] do
+   Factorization(MonomialCoefficient(Evaluate(f2,[l,m,s,x,y]),i));
+end for;
+
+//We compute the discriminant of the quadratic form that is the homogenisation of f2
+//with respect to t and u, and see that all but the last factors lie in the set S0. 
+
+a:=(m^2*s+m^2-s-1);
+b:=(-2*l*m*s+2*l*s-2*m*s+2*s);
+c:=(l^2*s-l^2-s+1);
+d:=(-2*l*m*s+2*l*s-2*m*s+2*s);
+e:=(2*l*m*s-2*l*s+2*m*s-2*s);
+f:=(-l^2*s+l^2+2*l*m*s-2*l*s-m^2*s-m^2+2*m*s);
+discr:=4*a*c*f-a*e^2-b^2*f+b*d*e-c*d^2;
+Factorization(discr);
+for fact in Factorization(discr) do
+  fact[1] in S0;
+end for;
+
+//We rewrite f2 to study the set Z(f2,g), and check that gamma is corresponds to a 
+//configuration where R3,...R8 are contained in a conic.
+
+a1:=(l-1)*(u+1)-(m+1)*(t-1);
+a2:=(l+1)*(u+1)-(m+1)*(t+1);
+g:=l*s-l-m*s-m+2*s;
+assert(f2 eq (s-1)*(l+1)*(u-t)*a1+(t-1)*g*a2);
+
+gamma:=(m-u)*(l-1)*g+(l-s)*(m-1)*a1;
+
+d:=2;
+mons:=MonomialsOfDegree(A,d);
+i1:=1;i2:=2;
+zeros:=[[Evaluate(M,pts[i]):M in mons]:i in [3..8]];
+N:=Factorization(Determinant(Matrix(zeros)));
+N[11][1] eq gamma;
+gamma in S0; 
+
+//We define the ring homomorphism phi, and compute phi(f2).
+
+T5v<l_1,m_1,s_1,t_1,v_1>:=PolynomialRing(k,5);
+phi:=hom<T5->T5v|[l_1,m_1,s_1,t_1,v_1*(t_1-l_1)+m_1]>;
+Av<x_1>:=PolynomialRing(T5v,1);
+
+for i in [x_1,1] do
+ Factorization(MonomialCoefficient(Evaluate(T5v!(phi(f2)/(t_1-l_1)),[l_1,m_1,s_1,x_1,v_1]),i));
+end for;
+
+//We define the ring homomorphism rho
+
+T4<l_2,m_2,s_2,v_2>:=PolynomialRing(k,4);
+K4<l_2,m_2,s_2,v_2>:=FieldOfFractions(T4);
+beta:=-(l_2^3*s_2*v_2^2 - l_2^3*v_2^2 - 2*l_2^2*m_2*s_2*v_2 + 2*l_2^2*m_2*v_2 + l_2*m_2^2*s_2 - l_2*m_2^2 - 2*l_2*m_2*s_2*v_2 - l_2*s_2*v_2^2 + 2*l_2*s_2*v_2- l_2*s_2 + l_2*v_2^2 + l_2 + 2*m_2^2*s_2 - 2*m_2*v_2 + 2*s_2*v_2 - 2*s_2);
+alpha:=l_2^2*s_2*v_2^2 - l_2^2*v_2^2 - 2*l_2*m_2*s_2*v_2 + 2*l_2*s_2*v_2 + m_2^2*s_2 + m_2^2 - 2*m_2*s_2*v_2 - s_2*v_2^2 + 2*s_2*v_2 - s_2 + v_2^2 - 1;
+t_2:=-beta/alpha;
+
+rho:=hom<T5v­->K4 | [l_2,m_2,s_2,t_2,v_2]>;
+
+//We write the points in pts and the elements in S0 in terms of the 
+//coordinates of T4, by applying phi and rho and clearing denominators. 
+
+function psi(p);
+    pphi:=[ e@phi : e in p];
+    prep:=[ e@rho : e in pphi];
+    den:=LCM([Denominator(e) : e in prep]);
+    return [T4!(e*den) : e in prep];
+end function;
+
+pts1:=[psi(p) : p in pts];
+S1:=Set(&cat[ [f[1] : f in Factorization(psi([(elt)])[1])] : elt in S0]);
+
+//We compute the equations corresponding to the fact the 
+//D_2,D_2,D_3,D_4 contain the point P. First we obtain equations in T5,
+//then factorise and filter out the factors that are in S0. We then 
+//apply psi to write the remaining factors in terms of the coordinates of T4. 
+//We factorise again and filter out the factors in S1. The remaining 
+//factors are stored in polys. 
+
+quarts:=[[1,7,8],[2,5,6],[3,6,8],[4,5,7]];
+
+d:=4;
+mons:=MonomialsOfDegree(A,d);
+
+zeros:=[ [ Evaluate(M,X) : M in mons ] : X in pts ];
+
+sing1:=[ [ Evaluate(Derivative(M,A.i),pts[1]) : M in mons ] : i in [2,3] ];
+sing2:=[ [ Evaluate(Derivative(M,A.i),pts[2]) : M in mons ] : i in [2,3] ];
+sing3:=[ [ Evaluate(Derivative(M,A.i),pts[3]) : M in mons ] : i in [1,3] ];
+sing4:=[ [ Evaluate(Derivative(M,A.i),pts[4]) : M in mons ] : i in [1,3] ];
+sing5:=[ [ Evaluate(Derivative(M,A.i),pts[5]) : M in mons ] : i in [1,3] ];
+sing6:=[ [ Evaluate(Derivative(M,A.i),pts[6]) : M in mons ] : i in [1,3] ];
+sing7:=[ [ Evaluate(Derivative(M,A.i),pts[7]) : M in mons ] : i in [1,3] ];
+sing8:=[ [ Evaluate(Derivative(M,A.i),pts[8]) : M in mons ] : i in [1,3] ];
+
+sings:=[sing1,sing2,sing3,sing4,sing5,sing6,sing7,sing8];
+
+polys:=[];
+
+for i in [1..4] do;
+N:=Matrix(zeros cat &cat[sings[j] : j in quarts[i]]);
+quarts[i];
+D:=Determinant(N);
+  "computing D";
+  f1:=Factorization(D);
+  filtf1:=[f[1] : f in f1 | not f[1] in S0];
+  #filtf1;
+  "applying psi";
+  facts:=&cat[ psi([f]) : f in filtf1];
+  f2:=&cat[Factorization(f) : f in facts];
+  #f2;
+  filtf2:=[f[1] : f in f2 | not f[1] in S1];
+  Append(~polys,filtf2);
+end for;
+
+assert &and[#pols eq 1 : pols in polys];
+
+//The polynomials g1,g2,g3,g4 are in the file fourpolynomials.
+
+g1:=T4!polys[1][1];
+g2:=T4!polys[2][1];
+g3:=T4!polys[3][1];
+g4:=T4!polys[4][1];
+
+//We define the element delta, and show that all its factors correspond to three
+//of the points R1,...,R8 being collinear.
+ 
+delta:=(l_2*s_2-l_2-m_2*s_2-m_2+2*s_2)^2*(l_2-m_2)*(l_2-s_2)*(l_2+1)*(m_2-1)*(s_2+1)*(l_2-1)*(m_2+1)*(s_2-1)*v_2^2;
+
+factdelta:=Factorization(T4!delta);
+
+collinear:=[];
+d:=1;
+mons:=MonomialsOfDegree(A,d);
+for i1 in [1..8] do
+  for i2 in [i1+1..8] do
+    for i3 in [i2+1..8] do
+    zeros:=[[Evaluate(M,pts1[i]):M in mons]:i in [i1,i2,i3]];
+    N:=Factorization(Determinant(Matrix(zeros)));
+    if factdelta[10][1] in [n[1]:n in N] then print i1, i2, i3; end if;
+    Append(~collinear,[n[1]:n in N]);
+    end for;
+  end for;
+end for;
+collinear:=&cat(collinear);
+
+for i in [1..#factdelta] do
+  factdelta[i][1] in collinear;
+end for;
+
+//We compute a Groebner basis for the ideal I in QQ[l,m,s,v], and check that delta
+//is contained in this ideal. 
+
+T4Q<l_2,m_2,s_2,v_2>:=PolynomialRing(Rationals(),4);
+I:=[T4Q!Evaluate(g,[s_2,v_2,m_2,l_2]) :  g in [g1,g2,g3,g4]];
+time G,b:=GroebnerBasis(I:ReturnDenominators);
+T4Q!Evaluate(delta,[s_2,v_2,m_2,l_2]) in Ideal(I);
+C:=Coordinates(Ideal(I),T4Q!Evaluate(delta,[s_2,v_2,m_2,l_2]));
+
+//We now define the set Primes of prime factors that magma divided by in the computations
+//of the Groebner basis, and the prime factors in the denominators of the coefficients 
+//of the Groebner basis, and the prime factors in the denominators of the coefficients 
+//of the elements in the set C. 
+
+Den:=&cat[[p[1]:p in Factorization(d)]:d in b];      
+Coeff:=&join[ &join{ Set(PrimeFactors(Denominator(c))) : c in Coefficients(p)} : p in G]; 
+FactC:=&join[ &join{ Set(PrimeFactors(Denominator(c))) : c in Coefficients(p)} : p in C];
+
+Primes:=&join[Set(Den), Coeff, FactC];
+
+//Finally, for all these primes except for 2,3, we check that the reduction of 
+//delta is in de ideal generated by the reductions of g1,g2,g3,g4.
+
+for p in [r:r in Primes|r ne 2 and r ne 3] do
+  Rp<s_2,v_2,m_2,l_2>:=PolynomialRing(GF(p),4);      
+  g1p:=Rp!g1;g2p:=Rp!g2;g3p:=Rp!g3;g4p:=Rp!g4;
+  assert(Rp!Evaluate(delta,[s_2,v_2,m_2,l_2]) in Ideal([g1p,g2p,g3p,g4p]));
+end for;
+
+============================== Over GF(2) =========================================
+
+//We follow exactly the same structure as above.
+
+k:=GF(2);
+
+T5<l,m,s,t,u>:=PolynomialRing(k,5);
+PP5:=ProjectiveSpace(T5);
+
+R1:=[1,0,1];
+R2:=[0,0,0];
+R3:=[s^2+s,l+s,l*s+s^2];
+R4:=[s^2+s,m+s,m*s+s^2];
+R5:=[0,1,0];
+R6:=[0,­1,1];
+R7:=[t^2+t,l+t,l*t+t^2];
+R8:=[u^2+u,m+u,m*u+u^2];
+P:=[­1,0,0];
+
+pts:=[R1,R2,R3,R4,R5,R6,R7,R8,P];
+
+A<x,y,z>:=PolynomialRing(T5,3);
+
+d:=2;
+mons:=MonomialsOfDegree(A,d);
+zeros:=[[Evaluate(M,pts[i]):M in mons]:i in [3,5,7,8,9]];
+N:=Matrix([[m:m in mons]] cat zeros);
+factN:=Factorization(Determinant(N));
+
+f:=Evaluate(factN[8][1],[x,0,z]);
+Factorization(f);
+
+R2:=[l*s*u + l*s + l*t*u + l*t + l*u^2 + l + m*s*t + m*s + m*t + m + s*t + s*u + t*u + u^2,0,l^2*u + l^2 + l*m*u + l*m + l*s*u + l*s + l*t*u + l*t + l*u^2 + l*u + m*s*t + m*s + m*t + m*u + s*t + s*u + t*u + u^2];
+
+pts:=[R1,R2,R3,R4,R5,R6,R7,R8,P];
+
+facts:=[];
+
+d:=1;
+mons:=MonomialsOfDegree(A,d);
+for i1 in [1..8] do
+  for i2 in [i1+1..8] do
+    for i3 in [i2+1..8] do
+    zeros:=[[Evaluate(M,pts[i]):M in mons]:i in [i1,i2,i3]];
+    N:=Factorization(Determinant(Matrix(zeros)));
+    Append(~facts,[f[1]:f in N]);
+    end for;
+  end for;
+end for;
+
+d:=2;
+mons:=MonomialsOfDegree(A,d);
+for i1 in [1..8] do
+  for i2 in [i1+1..8] do
+      zeros:=[[Evaluate(M,pts[i]):M in mons]:i in [1..8]|i ne i1 and i ne i2];
+      N:=Factorization(Determinant(Matrix(zeros)));
+      Append(~facts,[f[1]:f in N]);
+  end for;
+end for;
+
+d:=3;
+mons:=MonomialsOfDegree(A,d);
+for i in [1..8] do
+zeros:=[ [ Evaluate(M,X) : M in mons ] : X in pts[1..8]|X ne pts[i]];
+sing:=[ [ Evaluate(Derivative(M,A.j),pts[i]) : M in mons ] : j in [1,2,3] ];
+N:=Factorization(Determinant(Matrix(zeros cat sing)));
+Append(~facts,[f[1]:f in N]);
+end for;
+
+S0:=Set(&cat(facts));
+
+d:=2;
+mons:=MonomialsOfDegree(A,d);
+zeros:=[ [ Evaluate(M,pts[i]) : M in mons ] : i in [2,4,6,7,8,9] ];
+N:=Matrix(zeros);
+factN:=Factorization(Determinant(N));
+
+//All but the last factor in factN are contained in S0 
+
+collinear:=[];
+d:=1;
+mons:=MonomialsOfDegree(A,d);
+for i1 in [1..8] do
+  for i2 in [i1+1..8] do
+    for i3 in [i2+1..8] do
+    zeros:=[[Evaluate(M,pts[i]):M in mons]:i in [i1,i2,i3]];
+    N:=Factorization(Determinant(Matrix(zeros)));
+    Append(~collinear,[f[1]:f in N]);
+    end for;
+  end for;
+end for;
+collinear:=&cat(collinear);
+
+for i in [1..#factN-1] do
+  factN[i][1] in collinear;
+end for;
+
+//The last factor of factN determines the variety F2. 
+
+f2:=l^2*s*u^2 + l^2*s*u + l*m*t*u + l*m*t + l*s*u^2 + l*s*u + m^2*s*t^2 + m^2*s*t + m^2*t^2 + m^2*t + m*s*t^2 + m*s*t + m*t^2 + m*t*u;
+
+for i in [x^2,x*y,y^2,x,y,1] do
+   i, MonomialCoefficient(Evaluate(f2,[l,m,s,x,y]),i);
+end for;
+
+//We compute the discriminant of the quadratic form that is the homogenisation of f2
+//with respect to t and u, and see that all but the last factors lie in the set S0. 
+
+a:=m^2*s+m^2+m*s+m;
+b:=l*m+m;
+c:=l^2*s+l*s;
+d:=l*m+m^2*s+m^2+m*s;
+e:=l^2*s+l*s;
+f:=0;
+
+discr:=4*a*c*f-a*e^2-b^2*f+b*d*e-c*d^2;
+Factorization(discr);
+for fact in Factorization(discr) do
+  fact[1] in S0;
+end for;
+
+g:=Factorization(discr)[#Factorization(discr)][1];
+
+//We check that the intersection of the varieties defined by g=0 and f2=0 lies in the algebraic
+//set defined by S0.
+
+S:=Scheme(AffineSpace(T5),[T5!f2,g]);
+for cmp in IrreducibleComponents(S) do  
+  &or[ d in Ideal(DefiningEquations(cmp)) : d in S0 ];
+end for;
+
+//We define the ring homomorphism phi, and compute phi(f2).
+
+T5v<l_1,m_1,s_1,t_1,v_1>:=PolynomialRing(k,5);
+phi:=hom<T5->T5v|[l_1,m_1,s_1,t_1,v_1*(t_1-l_1)+m_1]>;
+Av<x_1>:=PolynomialRing(T5v,1);
+
+for i in [x_1,1] do
+ MonomialCoefficient(Evaluate(T5v!(phi(f2)/(t_1-l_1)),[l_1,m_1,s_1,x_1,v_1]),i);
+end for;
+
+//We define the ring homomorphism rho
+
+T4<l_2,m_2,s_2,v_2>:=PolynomialRing(k,4);
+K4<l_2,m_2,s_2,v_2>:=FieldOfFractions(T4);
+beta:=l_2^3*s_2*v_2^2 + l_2^2*s_2*v_2^2 + l_2^2*s_2*v_2 + l_2*m_2^2*s_2 + l_2*m_2*s_2 + l_2*s_2*v_2 + m_2^2*s_2 + m_2*s_2;
+alpha:=l_2^2*s_2*v_2^2 + l_2*m_2*v_2 + l_2*s_2*v_2^2 + m_2^2*s_2 + m_2^2 + m_2*s_2 + m_2*v_2 + m_2;
+t_2:=-beta/alpha;
+
+rho:=hom<T5v­->K4 | [l_2,m_2,s_2,t_2,v_2]>;
+
+//We write the points in pts and the elements in S0 in terms of the 
+//coordinates of T4, by applying phi and rho and clearing denominators. 
+
+function psi(p);
+    pphi:=[ e@phi : e in p];
+    prep:=[ e@rho : e in pphi];
+    den:=LCM([Denominator(e) : e in prep]);
+    return [T4!(e*den) : e in prep];
+end function;
+
+pts1:=[psi(p) : p in pts];
+S1:=Set(&cat[ [f[1] : f in Factorization(psi([(elt)])[1])] : elt in S0]);
+
+//Force D_2,D_2,D_3,D_4 to contain P.
+
+quarts:=[[1,7,8],[2,5,6],[3,6,8],[4,5,7]];
+
+d:=4;
+mons:=MonomialsOfDegree(A,d);
+zeros:=[ [ Evaluate(M,X) : M in mons ] : X in pts];
+
+sing1:=[ [ Evaluate(Derivative(M,A.i),pts[1]) : M in mons ] : i in [2,3] ];
+sing2:=[ [ Evaluate(Derivative(M,A.i),pts[2]) : M in mons ] : i in [2,3] ];
+sing3:=[ [ Evaluate(Derivative(M,A.i),pts[3]) : M in mons ] : i in [1,3] ];
+sing4:=[ [ Evaluate(Derivative(M,A.i),pts[4]) : M in mons ] : i in [1,3] ];
+sing5:=[ [ Evaluate(Derivative(M,A.i),pts[5]) : M in mons ] : i in [1,3] ];
+sing6:=[ [ Evaluate(Derivative(M,A.i),pts[6]) : M in mons ] : i in [1,3] ];
+sing7:=[ [ Evaluate(Derivative(M,A.i),pts[7]) : M in mons ] : i in [1,3] ];
+sing8:=[ [ Evaluate(Derivative(M,A.i),pts[8]) : M in mons ] : i in [1,3] ];
+
+sings:=[sing1,sing2,sing3,sing4,sing5,sing6,sing7,sing8];
+
+polys:=[];
+
+for i in [1..4] do;
+N:=Matrix(zeros cat &cat[sings[j] : j in quarts[i]]);
+  quarts[i];
+  time D:=Determinant(N);
+"computing D";
+  time f1:=Factorization(D);
+  time filtf1:=[f[1] : f in f1 | not f[1] in S0];
+  "applying psi";
+  facts:=&cat[ psi([f]) : f in filtf1];
+  f2:=&cat[Factorization(f) : f in facts];
+  filtf2:=[f[1] : f in f2 | not f[1] in S1];
+  filtf2;
+  Append(~polys,filtf2);
+end for;
+
+assert &and[#pols eq 1 : pols in polys];
+
+//The polynomials g1,g2,g3,g4 are in the file fourpolynomials.
+
+//We find elements in S1 such that their product is contained in the ideal
+//generated by the four polynomials in GF(2)[l_2,m_2,s_2,v_2];.
+
+A4:=AffineSpace(T4);
+Z:=Scheme(A4,&cat(polys));                 
+Zred:=ReducedSubscheme(Z);            
+Zredcmps:=IrreducibleComponents(Zred);
+
+defeqnS1:=&cat[[eqn:eqn in DefiningEquations(cmp)|eqn in S1]:cmp in Zredcmps];
+product:=&*[defeqnS1[i]:i in [1,2,3,4,5,6,7,9,9,9,11,12,15,17]];
+product in Ideal([p[1]:p in polys]);
+
+collinear:=[];
+d:=1;
+mons:=MonomialsOfDegree(A,d);
+for i1 in [1..8] do
+  for i2 in [i1+1..8] do
+    for i3 in [i2+1..8] do
+    zeros:=[[Evaluate(M,pts1[i]):M in mons]:i in [i1,i2,i3]];
+    N:=Factorization(Determinant(Matrix(zeros)));
+    Append(~collinear,[f[1]:f in N]);
+    end for;
+  end for;
+end for;
+collinear:=&cat(collinear);
+
+for i in [1..#defeqnS1] do
+  defeqnS1[i] in collinear;
+end for;
+
+
+
+

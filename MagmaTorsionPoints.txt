@@ -1,0 +1,145 @@
+=================================================================================================================================================
+//The following is code used in Example 5.1.5 of my thesis.
+=================================================================================================================================================
+
+//We create the list pts consists of nine points [P1,P2,P3,P4,P5,P6,P7,P8,X] in PP2 with coordinates [x,y,z].
+
+pts:=[[ 1, 0, 1 ],[ 889, 0, 823 ],[ 2600, 101, 2551 ],[ 325, 12, 287 ],[ 0, 1, 1 ],[ 0, -1, 1 ],[ 4005, 2464, 3499 ],[ 195, 22, -113 ],[-1,0,1]];
+
+//We create a set Divisors consisting of primes, such that that the eight points are in general position 
+//in PP2 over any field of characteristic not in Divisors.
+
+R<x,y,z>:=PolynomialRing(Integers(),3);
+
+Determinants:=[];
+
+//no three points on a line
+d:=1;
+mons:=MonomialsOfDegree(R,d);
+for i1 in [1..8] do
+ for i2 in [i1+1..8] do
+  for i3 in [i2+1..8] do
+  zeros:=[[Evaluate(m,pts[i]):m in mons]:i in [i1,i2,i3]];
+  Append(~Determinants, Determinant(Matrix(zeros)));
+  end for;
+ end for;
+end for;
+
+//no six points on a conic
+d:=2;
+mons:=MonomialsOfDegree(R,d);
+for i1 in [1..8] do
+ for i2 in [i1+1..8] do
+  zeros:=[[Evaluate(m,pts[i]):m in mons]:i in [1..8]|i ne i1 and i ne i2];
+  Append(~Determinants, Determinant(Matrix(zeros)));
+ end for;
+end for;
+
+//no eight points on a cubic that is singular in one of them
+d:=3;
+mons:=MonomialsOfDegree(R,d);
+for i in [1..8] do
+ zeros:=[ [ Evaluate(m,X) : m in mons ] : X in pts[1..8]|X ne pts[i]];
+ sing:=[ [ Evaluate(Derivative(m,R.j),pts[i]) : m in mons ] : j in [1,2,3] ];
+ Append(~Determinants, Determinant(Matrix(zeros cat sing)));
+end for;
+
+//The set Divisors contains 42 primes.
+Divisors:=Set(&cat[[Factorization(d)[i][1]:i in [1..#Factorization(d)]]:d in Determinants]);
+
+//We check that the point X is torsion on its fiber of the corresponding elliptic surface.
+
+R<x,y,z>:=PolynomialRing(Rationals(),3);
+PP2:=ProjectiveSpace(R);
+L:=LinearSystem(PP2,3);
+LC:=LinearSystem(L,[PP2!P:P in pts[1..8]]);
+
+for P in BasePoints(LC) do
+if P notin [PP2!Q:Q in pts] then print P; end if; end for;
+B:=$1; //this is the basepoint of the linear system of cubics through P1,...,P8.
+
+Fiber_X:=Sections(LinearSystem(L,[PP2!P:P in pts]))[1]; 
+C:=Curve(PP2,Fiber_X);
+E,h:=EllipticCurve(C,C!B); //the fiber of the point X=pts[9].
+Order(E!h(pts[9])); //the order of the point X on its fiber. 
+
+//We compute the conics C3 and C4.
+
+d:=2;
+mons:=MonomialsOfDegree(R,d);
+
+//C3 goes through P2,P3,P5,P7,P8.
+zeros:=[ [ Evaluate(m,X) : m in mons ] : X in [pts[2],pts[3],pts[5],pts[7],pts[8]]];
+M:=Matrix(zeros cat [[m:m in mons]]);
+Determinant(M);
+
+//C4 goes through P2,P4,P6,P7,P8.
+zeros:=[ [ Evaluate(m,X) : m in mons ] : X in [pts[2],pts[4],pts[6],pts[7],pts[8]]];
+M:=Matrix(zeros cat [[m:m in mons]]);
+Determinant(M);
+
+========================================================================================================================================
+//The following produces a list of the dot product matrices, and for each matrix a basis for the kernel, of the 18 
+//cliques alpha_1,...,alpha_11,beta_1,...,beta_6,gamma, that appear in the proof of Lemma 5.2.2 in my thesis.  
+========================================================================================================================================
+
+//We first create a list roots representing all 240 roots in the E8 root system, with numbering as in Notation 3.5.1 of my thesis.
+
+lst:=
+[
+[   1,   1,   0,   0,   0,   0,   0,   0],
+[   1,  -1,   0,   0,   0,   0,   0,   0],
+[  -1,  -1,   0,   0,   0,   0,   0,   0],
+[ 1/2, 1/2, 1/2, 1/2, 1/2, 1/2, 1/2, 1/2]
+];
+
+Negative:=&cat[[S:S in Subsets({1,2,3,4,5,6,7,8},i)]:i in [2,4,6,8]]; 
+S8:=SymmetricGroup(8);
+exc1:={ [ l[i^g] : i in [1..8]] : g in S8, l in lst[1..3]};
+exc2:=[];
+for N in Negative do;
+e:=lst[4];
+for i in N do
+e[i]:=-e[i];
+end for;
+Append(~exc2,e);
+end for;
+exc2:=Set(exc2);
+roots:=Sort([e:e in exc2] cat [lst[4]]) cat Sort([e: e in exc1]); 
+
+//Next we create a function dotroot, which, given two vectors in roots, produces the dot product of the corresponding roots in E8.
+
+function dotroot(x,y)
+   return &+[x[i]*y[i] : i in [1..8]];
+end function;
+
+//We define the 18 cliques corresponding to the 18 cliques in Lemma 5.2.2.
+
+alpha1:=[roots[3],roots[6],roots[41],roots[48],roots[50],roots[55],roots[214],roots[240]];
+alpha1:=[roots[3],roots[6],roots[41],roots[48],roots[50],roots[55],roots[214],roots[227],roots[240]];
+alpha2:=[roots[19],roots[41],roots[48],roots[50],roots[75],roots[146],roots[193],roots[214],roots[240]];
+alpha3:=[roots[12],roots[23],roots[41],roots[50],roots[67],roots[86],roots[163],roots[214],roots[240]];
+alpha4:=[roots[12],roots[23],roots[40],roots[41],roots[50],roots[65],roots[86],roots[214],roots[240]];
+alpha5:=[roots[19],roots[41],roots[48],roots[50],roots[70],roots[75],roots[193],roots[214],roots[240]];
+alpha6:=[roots[12],roots[23],roots[41],roots[50],roots[163],roots[168],roots[214],roots[227],roots[240]];
+alpha7:=[roots[19],roots[41],roots[48],roots[50],roots[65],roots[150],roots[172],roots[214],roots[240]];
+alpha8:=[roots[41],roots[48],roots[50],roots[55],roots[65],roots[78],roots[178],roots[214],roots[240]];
+alpha9:=[roots[3],roots[41],roots[48],roots[50],roots[55],roots[66],roots[152],roots[214],roots[240]];
+alpha10:=[roots[3],roots[41],roots[48],roots[50],roots[55],roots[72],roots[77],roots[214],roots[240]];
+alpha11:=[roots[7],roots[41],roots[48],roots[50],roots[68],roots[78],roots[85],roots[214],roots[240]];
+beta1:=[roots[41],roots[48],roots[50],roots[55],roots[66],roots[152],roots[178],roots[184],roots[214],roots[240]];
+beta2:=[roots[3],roots[6],roots[41],roots[48],roots[50],roots[55],roots[76],roots[77],roots[214],roots[240]];
+beta3:=[roots[12],roots[23],roots[40],roots[41],roots[50],roots[67],roots[77],roots[86],roots[214],roots[240]];
+beta4:=[roots[6],roots[19],roots[41],roots[48],roots[50],roots[65],roots[76],roots[192],roots[214],roots[240]];
+beta5:=[roots[3],roots[6],roots[41],roots[48],roots[50],roots[55],roots[76],roots[85],roots[214],roots[240]];
+beta6:=[roots[19],roots[41],roots[48],roots[50],roots[65],roots[76],roots[86],roots[192],roots[214],roots[240]];
+gamma:=[roots[11],roots[22],roots[36],roots[46],roots[49],roots[69],roots[74],roots[84],roots[184],roots[196],roots[214],roots[240]];
+
+//For each clique, we construct the matrix where entry (i,j) is the dot product of the i-th and j-th vector in the 
+//clique, and a basis for the kernel of this matrix.
+
+for clique in [alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,alpha7,alpha8,alpha9,alpha10,alpha11,beta1,beta2,beta3,beta4,beta5,beta6,gamma] do
+M:=Matrix([ [ dotroot(a,b) : b in clique] : a in clique]);
+print M, Basis(Kernel(ChangeRing(M,Integers())));
+end for;
+
