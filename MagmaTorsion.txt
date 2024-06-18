@@ -108,7 +108,7 @@ Determinant(M);
 
 
 ========================================================================================================================================
-//The following code is used in the proof of Lemma 4.2 of the paper 
+//The following code is used in the proof of Lemma 4.3 of the paper 
 //'Torsion points and concurrent exceptional curves on del Pezzo surfaces of degree one', 
 //by Julie Desjardins and Rosa Winter.
 ========================================================================================================================================
@@ -525,7 +525,7 @@ N:=Matrix(zeros cat sing);
 C:=Factorization(Determinant(N));
 
 for c in C do
-c[1] in S_0; 
+c[1] in S_2; 
 end for;
 
 //We find c2 + d2*e2 - d2*m2 - d2 - e2*m2 - e2 + m2^2 + 2*m2 - 1 = 0. 
