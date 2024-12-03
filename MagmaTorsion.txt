@@ -204,7 +204,7 @@ S8:=SymmetricGroup(8);
 exc:={ [l[1]] cat [ l[2][i^g] : i in [1..8]] : g in S8, l in lst};
 exc:=Sort([e: e in exc]);
 
-//Next we create a function root, which, given two vectors in exc, produces the intersection
+//Next we create a function dot, which, given two vectors in exc, produces the intersection
 //pairing of the corresponding exceptional curves in the picard group.
 
 function dot(x,y)
@@ -379,7 +379,6 @@ end for;
 ]
 
 
-
 =================================================================================================================================================
 //The following code is used in the proof of Proposition 5.4 of the paper 
 //'Torsion points and concurrent exceptional curves on del Pezzo surfaces of degree one', 
@@ -529,5 +528,142 @@ c[1] in S_2;
 end for;
 
 //We find c2 + d2*e2 - d2*m2 - d2 - e2*m2 - e2 + m2^2 + 2*m2 - 1 = 0. 
+
+
+=================================================================================================================================================
+//The following code is used in the proof of Theorem 6.1 of the paper 
+//'Torsion points and concurrent exceptional curves on del Pezzo surfaces of degree one', 
+//by Julie Desjardins and Rosa Winter.
+=================================================================================================================================================
+//We again create a list exc representing all 240 exceptional curves in the Picard group of a del Pezzo
+//surface of degree 1, and the function dot, as above. 
+
+lst:=
+[
+<0, [ 1,  0,  0,  0,  0,  0,  0,  0]>,
+<1, [-1, -1,  0,  0,  0,  0,  0,  0]>,
+<2, [-1, -1, -1, -1, -1,  0,  0,  0]>,
+<3, [-2, -1, -1, -1, -1, -1, -1,  0]>,
+<4, [-2, -2, -2, -1, -1, -1, -1, -1]>,
+<5, [-2, -2, -2, -2, -2, -2, -1, -1]>,
+<6, [-3, -2, -2, -2, -2, -2, -2, -2]>
+];
+S8:=SymmetricGroup(8);
+exc:={ [l[1]] cat [ l[2][i^g] : i in [1..8]] : g in S8, l in lst};
+exc:=Sort([e: e in exc]);
+
+function dot(x,y)
+   return x[1]*y[1]-&+[x[i]*y[i] : i in [2..9]];
+end function;
+
+//The following list is the output from the code above used in Proposition 5.1.
+
+list:=[[ 
+    { 9, 22, 31, 36, 99, 171, 177, 193 },
+    { 9, 22, 31, 36, 99, 171, 177, 238 },
+    { 9, 22, 31, 36, 156, 162, 181, 229 }
+] ,
+[ 
+    { 9, 22, 31, 36, 99, 110, 175, 182 },
+    { 9, 22, 31, 36, 99, 171, 177, 192 },
+    { 9, 22, 31, 36, 99, 171, 177, 214 },
+    { 9, 22, 31, 36, 99, 171, 192, 217 },
+    { 9, 22, 31, 36, 156, 162, 168, 226 },
+    { 9, 22, 31, 36, 156, 177, 214, 225 }
+] ,
+[ 
+    { 9, 22, 31, 36, 99, 171, 214, 231 },
+    { 9, 22, 31, 36, 156, 162, 181, 199 }
+] ,
+[ 
+    { 9, 22, 31, 36, 99, 171, 177, 183 },
+    { 9, 22, 31, 36, 156, 162, 174, 182 },
+    { 9, 22, 31, 36, 156, 162, 174, 231 }
+] ,
+[ 
+    { 9, 22, 31, 36, 99, 110, 175, 218 },
+    { 9, 22, 31, 36, 99, 110, 180, 197 },
+    { 9, 22, 31, 36, 99, 171, 192, 218 },
+    { 9, 22, 31, 36, 99, 171, 198, 240 },
+    { 9, 22, 31, 36, 156, 177, 225, 230 }
+] ,
+[ 
+    { 9, 22, 31, 36, 156, 162, 181, 214 },
+    { 9, 22, 31, 36, 156, 177, 209, 225 }
+] ,
+[ 
+    { 9, 22, 31, 36, 99, 110, 175, 239 },
+    { 9, 22, 31, 36, 99, 171, 177, 209 },
+    { 9, 22, 31, 36, 99, 171, 192, 197 },
+    { 9, 22, 31, 36, 156, 162, 168, 174 },
+    { 9, 22, 31, 36, 156, 176, 214, 225 }
+] ,
+[ 
+    { 9, 22, 31, 36, 156, 177, 214, 216 }
+], 
+[ 
+    { 9, 22, 31, 36, 99, 110, 180, 199 },
+    { 9, 22, 31, 36, 99, 110, 180, 236 },
+    { 9, 22, 31, 36, 99, 171, 176, 192 },
+    { 9, 22, 31, 36, 99, 171, 176, 214 },
+    { 9, 22, 31, 36, 99, 171, 176, 239 },
+    { 9, 22, 31, 36, 206, 212, 223, 231 }
+] ,
+[ 
+    { 9, 22, 31, 36, 99, 110, 117, 177 },
+    { 9, 22, 31, 36, 156, 214, 225, 228 }
+],
+[ 
+    { 9, 22, 31, 120, 123, 168, 229, 237 }
+], 
+[ 
+    { 9, 22, 31, 36, 99, 110, 117, 176 },
+    { 9, 22, 31, 36, 156, 162, 168, 192 },
+    { 9, 22, 31, 36, 156, 176, 214, 217 }
+] ,
+[ 
+    { 9, 22, 31, 122, 130, 198, 209, 237 }
+] ,
+[ 
+    { 9, 22, 31, 36, 99, 110, 180, 183 }
+] ,
+[ 
+    { 9, 22, 31, 36, 156, 162, 174, 176 }
+] ,
+[ 
+    { 9, 22, 31, 36, 206, 209, 224, 231 }
+] ,
+[ 
+    { 9, 22, 31, 36, 99, 190, 199, 234 }
+] ,
+[ 
+    { 9, 22, 31, 122, 130, 192, 197, 209 }
+] ,
+[ 
+    { 9, 22, 31, 120, 123, 204, 209, 237 }
+], 
+[ 
+    { 9, 22, 31, 36, 99, 110, 117, 120 }
+] ];
+
+//For each of the 47 cliques in list, we construct the matrix where entry (i,j) 
+//is the dot product of the i-th and j-th vector in the clique, and a basis for the kernel of this matrix.
+//We only output the numbers of the cliques where this matrix has rank 8.
+
+for l in list do
+for a in l do
+M:=[[dot(exc[b],exc[c]):b in a]:c in a];
+for i in [1..#M] do
+     for j in [1..#M] do
+       M[i][j]:=1-M[i][j];
+     end for;
+  end for;
+if Rank(Matrix(M)) eq 8 then print Index(list,l), Index(l,a), Basis(Kernel(Matrix(M))); end if;
+end for;
+end for;
+
+
+
+
 
 
