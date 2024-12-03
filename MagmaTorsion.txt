@@ -658,7 +658,7 @@ for i in [1..#M] do
        M[i][j]:=1-M[i][j];
      end for;
   end for;
-if Rank(Matrix(M)) eq 8 then print Index(list,l), Index(l,a), Basis(Kernel(Matrix(M))); end if;
+Basis(Kernel(Matrix(M))); 
 end for;
 end for;
 
